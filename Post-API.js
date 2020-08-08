@@ -3,37 +3,24 @@ const XRegExp=require("xregexp");
 const app=express();
 app.use(express.json());
 
-var data=[];
 referenceData=[]
-
 
 app.post("/post",(req,res)=>{
 
-    data.push(req.body);
-    referenceData=data[0].referenceData;
-    REF_replace(data[0]["payload"]["value"]);
-    res.send(data[0]["payload"]);
-  
-})
-
-function REF_replace(dat) {
-    for(i in dat){
-      if(dat[i].valueType=='string'){
-        for(ref in referenceData){
-          if(dat[i].value.match(XRegExp(`${ref}`))){
-                 dat[i].value=dat[i].value.replace(XRegExp(`{${ref}}`),referenceData[ref]);
-                }
-              }
-            }
-    else{
-         REF_replace(dat[i]["value"]);
+    var reqBody=req.body;
+    referenceData=reqBody.referenceData;
+    var transform= JSON.stringify(reqBody.payload)
+    for(ref in referenceData){
+        transform=transform.replace(XRegExp(`{${ref}}`),referenceData[ref]);
     }
-  }
-}
+    res.status(200).send(JSON.parse(transform));
+    
+})
 
 
 const port=process.env.PORT||8080;
 app.listen(port,()=>{console.log(`Running at ${port}`);})
+module.exports=app;
 
 
 
