@@ -2,26 +2,44 @@ const express = require('express');
 const app = express();
 const fs = require('fs');
 
-var file = function (req, res, next) {
-    var data = fs.readFileSync("input.json")
-    var file = JSON.parse(data);
-    var stringfile= JSON.stringify(file.payload)
-    Object.keys(file.referenceData).forEach(key => {
-        var toReplace =`{${key}}`;
-        var regex = new RegExp(toReplace, "g");
-        stringfile = stringfile.replace(regex,file.referenceData[key])
-    });
-    req.response= JSON.parse(stringfile);
-    next()
-  }
-  
-  app.use(file);
+var convert= function(obj,data){
+    if(Array.isArray(obj.value)){
+       obj.value.forEach((element)=>{
+           if(Array.isArray(element.value)){
+               convert(element,data)
+           }
+         Object.keys(data).forEach((label)=>{
+           if(element.value.includes(`{${label}}`)){
+           element.value = element.value.replace(`{${label}}`,data[label]);
+            }
+         })
 
-  app.get("/",(req,res)=>{
-    
-    res.json(req.response);
-});
+       })
+       return obj;
+   }
+   else{
+       Object.keys(data).forEach((label)=>{
+           if(obj.value.includes(`{${label}}`)){
+           obj.value = obj.value.replace(`{${label}}`,data[label]);
+            }
+         })
+         return obj;
+   }
+}
 
-app.listen(3000,()=>{
-    console.log("listening on port 3000")
+
+    app.use(function (req,res,next) {
+      var f = fs.readFileSync('input.json');      
+      file = JSON.parse(f);
+      console.log(typeof f);
+      req.out = convert(file.payload,file.referenceData);
+    next();
+  });
+
+  app.get('/',(req,res)=>{
+   res.json(req.out)
+   console.log(typeof req.out)
+  })
+  app.listen(5000,()=>{
+    console.log("listening on port 5000")
 })
